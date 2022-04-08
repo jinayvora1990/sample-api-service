@@ -20,6 +20,15 @@ pipeline {
             }
           }
         }
+        stage('Secrets scanner') {
+          steps {
+            container('trufflehog') {
+              catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                sh "trufflehog -x secrets-exclude.txt ${GIT_URL}"
+              }
+            }
+          }
+        }
       }
     }
     stage('Build') {
@@ -35,6 +44,19 @@ pipeline {
           steps {
             container('maven') {
               sh './mvnw test'
+            }
+          }
+        }
+        stage('Dependency check ') {
+          steps {
+            container('maven') {
+              sh './mvnw org.owasp:dependency-check-maven:check'
+            }
+          }
+          post {
+            always {
+              archiveArtifacts allowEmptyArchive: true, artifacts: 'target/dependency-check-report.html', fingerprint: true, onlyIfSuccessful: true
+              dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
             }
           }
         }

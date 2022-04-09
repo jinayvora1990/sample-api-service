@@ -77,6 +77,15 @@ pipeline {
             }
           }
         }
+        stage('Kubesec') {
+          steps {
+            container('build-tools') {
+              catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                sh 'kubesec scan k8s.yaml'
+              }
+            }
+          }
+        }
         stage('OSS License Checker') {
           steps {
             container('licensefinder') {

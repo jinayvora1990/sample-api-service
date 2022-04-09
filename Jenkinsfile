@@ -62,6 +62,21 @@ pipeline {
             }
           }
         }
+        stage('Spot Bugs - Security') {
+          steps {
+            container('maven') {
+              catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                sh './mvnw compile spotbugs:check'
+              }
+            }
+          }
+          post {
+            always {
+              archiveArtifacts allowEmptyArchive: true, artifacts: 'target/spotbugsXml.xml', fingerprint: true, onlyIfSuccessful: false
+              recordIssues enabledForFailure: true, tool: spotBugs()
+            }
+          }
+        }
         stage('OSS License Checker') {
           steps {
             container('licensefinder') {
